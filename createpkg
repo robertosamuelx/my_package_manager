@@ -1,0 +1,64 @@
+#!/bin/sh
+
+# -------------------------- VARIABLES
+export pkg_ext='betopkg' # package extension
+
+# -------------------------- FUNCTIONS
+CHECK_PKG(){
+    pkg_name="$@"
+
+    # validating if package extension is 'betopkg'
+    if ! echo "$pkg_name" | grep "\b${pkg_ext}\b$"; then
+        printf '%s\n' "O formato do pacote deve ser: ${pkg_ext}"
+        return 1
+    fi
+
+    # validating if there are spaces in package name
+    if echo "$pkg_name" | grep -qE "[[:space:]]+"; then
+        printf '%s\n' "Não use espaços no nome"
+        printf '%s\n' "Abortando a criação"
+        return 1
+    fi
+
+    # validating separators quantity in package name
+    separators=$(echo "${pkg_name}" | grep -o "-" | wc -l)
+
+    if [ "$separators" -lt '2' ] || [ "$separators" -gt '2' ]; then
+        printf '%s\n' "Erro... O nome do pacote está com a quantidade inválida de separadores"
+        printf '%s\n' "NomeDoPacote-Versao-Build.${pkg_ext}"
+        return 1
+    fi
+
+    return 0
+
+}
+
+# creating package
+CREATE_PKG() {
+    pkg_name="$1" # get package name
+
+    if tar -cf ../${pkg_name} .; then
+        printf '%s\n' "O pacote foi criado em ../${pkg_name}"
+        return 0
+    else
+        printf '%s\n' "O pacote ${pkg_name} não foi criado..."
+        exit 1
+    fi
+
+    return 0
+}
+
+# -------------------------- START
+case "$1" in
+    create|-c)
+        shift # going up to take package name
+        # package without name
+        if [ -z "$1" ]; then
+            printf '%s\n' "Você precisa fornecer um nome de pacote."
+            exit 1
+        fi
+
+        CHECK_PKG "$@" || exit 1 # validade package name
+        CREATE_PKG "$@" # calling function to create package
+    ;;
+esac
